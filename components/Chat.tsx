@@ -23,6 +23,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import ThumbUpIcon from "@mui/icons-material/ThumbUp";
 import { TransitionGroup } from "react-transition-group";
 import { LogInButton, LogOutButton } from "./AuthButtons";
+import { UserSettings } from "./UserSettings";
 
 interface Props {
   profile: Profile;
@@ -32,6 +33,9 @@ interface Props {
 
 export const Chat = ({ profile, session, supabase }: Props) => {
   const [messages, setMessages] = useState<Message[]>([]);
+  const [username, setUsername] = useState("");
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
   useEffect(() => {
     const fetchMessages = async () => {
       const { data, error } = await supabase
@@ -47,8 +51,6 @@ export const Chat = ({ profile, session, supabase }: Props) => {
 
     fetchMessages();
   }, [supabase, setMessages]);
-
-  const isLoggedIn = !!session;
 
   useEffect(() => {
     const setUpMessagesSubscription = () => {
@@ -72,6 +74,16 @@ export const Chat = ({ profile, session, supabase }: Props) => {
 
     setUpMessagesSubscription();
   }, [supabase]);
+
+  useEffect(() => {
+    const username = profile?.username
+      ? profile.username
+      : session?.user?.email ?? "anonymous";
+    setUsername(username);
+  }, [profile, session]);
+  useEffect(() => {
+    setIsLoggedIn(!!session);
+  }, [session]);
   const {
     register,
     formState: { errors },
@@ -82,18 +94,14 @@ export const Chat = ({ profile, session, supabase }: Props) => {
 
   return (
     <Container maxWidth="sm" sx={{ padding: theme.spacing(2) }}>
+      {profile && <UserSettings profile={profile} supabase={supabase} />}
       <Stack>
         <Box sx={{ width: "100%" }}>
           <Typography variant="h3" sx={{ mb: 3 }}>
             Chat
           </Typography>
           <Typography variant="body1">
-            Welcome,{" "}
-            {profile?.username
-              ? profile.username
-              : session?.user?.email ?? <>anonymous</>}
-            !
-            <br />
+            Welcome, {username}! <br />
             Feel free to type messages. Others will see them immediately.👍
           </Typography>
         </Box>
@@ -160,7 +168,6 @@ export const Chat = ({ profile, session, supabase }: Props) => {
 
         <Box>
           <form
-            autoComplete="off"
             onSubmit={handleSubmit(async (data) => {
               const newMessage: Message = {
                 content: data.message,
@@ -177,6 +184,7 @@ export const Chat = ({ profile, session, supabase }: Props) => {
                 <>
                   <Box mb={2}>
                     <TextField
+                      autoComplete="off"
                       label="Message"
                       fullWidth
                       {...register("message", {
@@ -201,7 +209,9 @@ export const Chat = ({ profile, session, supabase }: Props) => {
                       }}
                     />
                   </Box>
-                  <LogOutButton supabase={supabase} />
+                  <Box mr={2} display="inline">
+                    <LogOutButton supabase={supabase} />
+                  </Box>
                 </>
               ) : (
                 <LogInButton supabase={supabase} />

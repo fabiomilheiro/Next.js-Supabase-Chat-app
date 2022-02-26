@@ -12,7 +12,6 @@ const Home: NextPage<PageContext> = ({ profile, session, supabase }) => {
       <Head>
         <title>Supabase chat</title>
       </Head>
-
       <Chat profile={profile} session={session} supabase={supabase} />
     </>
   );

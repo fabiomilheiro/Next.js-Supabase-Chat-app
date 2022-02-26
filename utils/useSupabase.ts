@@ -31,13 +31,28 @@ const useSupabase = () => {
       if (error) {
         console.error("Could not fetch profile.", error);
         setProfile(undefined);
-      } else if (data?.length) {
+      } else if (data?.length && data[0]) {
         setProfile(data[0]);
       }
     };
 
     fetchProfile();
   }, [session?.user?.id]);
+
+  useEffect(() => {
+    const subscribeToProfileChanges = async () => {
+      if (profile) {
+        await supabase
+          .from<Profile>(`profiles:id=eq.${profile.id}`)
+          .on("UPDATE", (payload) => {
+            setProfile(payload.new);
+          })
+          .subscribe();
+      }
+    };
+
+    subscribeToProfileChanges();
+  }, [profile]);
 
   return { session, profile, supabase };
 };
