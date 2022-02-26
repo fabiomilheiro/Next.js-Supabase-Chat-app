@@ -2,15 +2,19 @@ import {
   Badge,
   Box,
   Collapse,
+  Container,
   Grid,
   IconButton,
   List,
   ListItem,
   ListItemText,
+  Stack,
   TextField,
+  Theme,
   Typography,
+  useTheme,
 } from "@mui/material";
-import { SupabaseClient } from "@supabase/supabase-js";
+import { Session, SupabaseClient } from "@supabase/supabase-js";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { Message } from "../utils/types";
@@ -18,12 +22,14 @@ import SendIcon from "@mui/icons-material/Send";
 import DeleteIcon from "@mui/icons-material/Delete";
 import ThumbUpIcon from "@mui/icons-material/ThumbUp";
 import { TransitionGroup } from "react-transition-group";
+import { LogInButton, LogOutButton } from "./Auth";
 
 interface Props {
+  session: Session;
   supabase: SupabaseClient;
 }
 
-export const Chat = ({ supabase }: Props) => {
+export const Chat = ({ session, supabase }: Props) => {
   const [messages, setMessages] = useState<Message[]>([]);
   useEffect(() => {
     const fetchMessages = async () => {
@@ -40,6 +46,8 @@ export const Chat = ({ supabase }: Props) => {
 
     fetchMessages();
   }, [supabase, setMessages]);
+
+  const isLoggedIn = !!session;
 
   useEffect(() => {
     const setUpMessagesSubscription = () => {
@@ -69,119 +77,133 @@ export const Chat = ({ supabase }: Props) => {
     handleSubmit,
     reset,
   } = useForm<MessageForm>();
+  const theme = useTheme<Theme>();
 
   return (
-    <>
-      <Box sx={{ width: "100%" }}>
-        <Typography variant="h3" sx={{ mb: 3 }}>
-          Chat
-        </Typography>
-      </Box>
-      <Grid container alignItems="stretch">
-        <Grid xs={12} md={6}>
-          <List>
-            <TransitionGroup>
-              {messages.map((message) => (
-                <Collapse key={message.id} in={true}>
-                  <ListItem
-                    alignItems="flex-start"
-                    secondaryAction={
-                      <>
-                        {!message.isDeleted && (
-                          <IconButton
-                            onClick={async () => {
-                              await supabase
-                                .from<Message>("messages")
-                                .update({ likes: message.likes + 1 })
-                                .eq("id", message.id);
-                            }}
+    <Container maxWidth="sm" sx={{ padding: theme.spacing(2) }}>
+      <Stack>
+        <Box sx={{ width: "100%" }}>
+          <Typography variant="h3" sx={{ mb: 3 }}>
+            Chat
+          </Typography>
+          <Typography variant="body1">
+            Feel free to type messages. Others will see them immediately.👍
+          </Typography>
+        </Box>
+        <List sx={{ overflow: "auto" }}>
+          <TransitionGroup>
+            {messages.map((message) => (
+              <Collapse key={message.id} in={true}>
+                <ListItem
+                  sx={{ paddingLeft: 0 }}
+                  alignItems="flex-start"
+                  secondaryAction={
+                    <>
+                      {!message.isDeleted && (
+                        <IconButton
+                          onClick={async () => {
+                            await supabase
+                              .from<Message>("messages")
+                              .update({ likes: message.likes + 1 })
+                              .eq("id", message.id);
+                          }}
+                        >
+                          <Badge
+                            badgeContent={
+                              message.likes ? message.likes : undefined
+                            }
+                            color="primary"
                           >
-                            <Badge
-                              badgeContent={
-                                message.likes ? message.likes : undefined
-                              }
-                              color="primary"
-                            >
-                              <ThumbUpIcon />
-                            </Badge>
-                          </IconButton>
-                        )}
-                        {!message.isDeleted && (
-                          <IconButton
-                            onClick={async () => {
-                              await supabase
-                                .from<Message>("messages")
-                                .update({
-                                  content: "",
-                                  isDeleted: true,
-                                })
-                                .eq("id", message.id);
-                            }}
-                          >
-                            <DeleteIcon />
-                          </IconButton>
-                        )}
-                      </>
-                    }
-                  >
-                    <ListItemText>
-                      {!message.isDeleted ? (
-                        message.content
-                      ) : (
-                        <Box sx={{ fontStyle: "italic", color: "Gray" }}>
-                          (deleted)
-                        </Box>
+                            <ThumbUpIcon />
+                          </Badge>
+                        </IconButton>
                       )}
-                    </ListItemText>
-                  </ListItem>
-                </Collapse>
-              ))}
-            </TransitionGroup>
-          </List>
-
-          <Box>
-            <form
-              autoComplete="off"
-              onSubmit={handleSubmit(async (data) => {
-                const newMessage: Message = {
-                  content: data.message,
-                  userId: supabase.auth.user()?.id!,
-                  isDeleted: false,
-                  likes: 0,
-                };
-                await supabase.from<Message>("messages").insert(newMessage);
-                reset();
-              })}
-            >
-              <Box>
-                <TextField
-                  label="Message"
-                  fullWidth
-                  {...register("message", { required: true, maxLength: 200 })}
-                  helperText={
-                    (errors.message?.type === "required" &&
-                      "Message is required.") ||
-                    (errors.message?.type === "maxLength" &&
-                      "Please type message with less than 200 characters.")
+                      {!message.isDeleted && (
+                        <IconButton
+                          onClick={async () => {
+                            await supabase
+                              .from<Message>("messages")
+                              .update({
+                                content: "",
+                                isDeleted: true,
+                              })
+                              .eq("id", message.id);
+                          }}
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      )}
+                    </>
                   }
-                  FormHelperTextProps={{
-                    error: !!errors.message,
-                  }}
-                  InputProps={{
-                    endAdornment: (
-                      <IconButton type="submit">
-                        <SendIcon />
-                      </IconButton>
-                    ),
-                  }}
-                />
-              </Box>
-            </form>
-          </Box>
-        </Grid>
-        <Grid xs={12} md={6}></Grid>
-      </Grid>
-    </>
+                >
+                  <ListItemText>
+                    {!message.isDeleted ? (
+                      message.content
+                    ) : (
+                      <Box sx={{ fontStyle: "italic", color: "Gray" }}>
+                        (deleted)
+                      </Box>
+                    )}
+                  </ListItemText>
+                </ListItem>
+              </Collapse>
+            ))}
+          </TransitionGroup>
+        </List>
+
+        <Box>
+          <form
+            autoComplete="off"
+            onSubmit={handleSubmit(async (data) => {
+              const newMessage: Message = {
+                content: data.message,
+                userId: supabase.auth.user()?.id!,
+                isDeleted: false,
+                likes: 0,
+              };
+              await supabase.from<Message>("messages").insert(newMessage);
+              reset();
+            })}
+          >
+            <Box>
+              {!isLoggedIn ? (
+                <>
+                  <Box mb={2}>
+                    <TextField
+                      label="Message"
+                      fullWidth
+                      {...register("message", {
+                        required: true,
+                        maxLength: 200,
+                      })}
+                      helperText={
+                        (errors.message?.type === "required" &&
+                          "Message is required.") ||
+                        (errors.message?.type === "maxLength" &&
+                          "Please type message with less than 200 characters.")
+                      }
+                      FormHelperTextProps={{
+                        error: !!errors.message,
+                      }}
+                      InputProps={{
+                        endAdornment: (
+                          <IconButton type="submit">
+                            <SendIcon />
+                          </IconButton>
+                        ),
+                      }}
+                    />
+                  </Box>
+                  <LogOutButton supabase={supabase} />
+                </>
+              ) : (
+                <LogInButton supabase={supabase} />
+              )}
+            </Box>
+          </form>
+        </Box>
+      </Stack>
+    </Container>
   );
 };
 
