@@ -5,8 +5,10 @@ export interface Profile {
 }
 
 export interface Message {
-  id: string;
-  createdAt: string;
+  id?: string;
+  createdAt?: string;
   content: string;
   userId: string;
+  isDeleted: boolean;
+  likes: number;
 }

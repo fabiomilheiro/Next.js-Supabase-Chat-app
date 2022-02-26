@@ -1,7 +1,23 @@
-import { Box, Grid, Typography } from "@mui/material";
+import {
+  Badge,
+  Box,
+  Collapse,
+  Grid,
+  IconButton,
+  List,
+  ListItem,
+  ListItemText,
+  TextField,
+  Typography,
+} from "@mui/material";
 import { SupabaseClient } from "@supabase/supabase-js";
 import { useEffect, useState } from "react";
-import { Message, Profile } from "../utils/types";
+import { useForm } from "react-hook-form";
+import { Message } from "../utils/types";
+import SendIcon from "@mui/icons-material/Send";
+import DeleteIcon from "@mui/icons-material/Delete";
+import ThumbUpIcon from "@mui/icons-material/ThumbUp";
+import { TransitionGroup } from "react-transition-group";
 
 interface Props {
   supabase: SupabaseClient;
@@ -10,15 +26,19 @@ interface Props {
 export const Chat = ({ supabase }: Props) => {
   const [messages, setMessages] = useState<Message[]>([]);
   useEffect(() => {
-    const fetchProfiles = async () => {
+    const fetchMessages = async () => {
       const { data, error } = await supabase
         .from<Message>("messages")
-        .select("*");
+        .select("*")
+        .order("id");
 
+      if (error) {
+        console.error(error);
+      }
       setMessages(data || []);
     };
 
-    fetchProfiles();
+    fetchMessages();
   }, [supabase, setMessages]);
 
   useEffect(() => {
@@ -43,18 +63,128 @@ export const Chat = ({ supabase }: Props) => {
 
     setUpMessagesSubscription();
   }, [supabase]);
+  const {
+    register,
+    formState: { errors },
+    handleSubmit,
+    reset,
+  } = useForm<MessageForm>();
+
   return (
     <>
-      <Typography variant="h3" sx={{ mb: 3 }}>
-        Chat
-      </Typography>
-      <Grid container>
-        <Grid item xs={12}>
-          {messages.map((message) => (
-            <Box key={message.id}>{message.content}</Box>
-          ))}
+      <Box sx={{ width: "100%" }}>
+        <Typography variant="h3" sx={{ mb: 3 }}>
+          Chat
+        </Typography>
+      </Box>
+      <Grid container alignItems="stretch">
+        <Grid xs={12} md={6}>
+          <List>
+            <TransitionGroup>
+              {messages.map((message) => (
+                <Collapse key={message.id} in={true}>
+                  <ListItem
+                    alignItems="flex-start"
+                    secondaryAction={
+                      <>
+                        {!message.isDeleted && (
+                          <IconButton
+                            onClick={async () => {
+                              await supabase
+                                .from<Message>("messages")
+                                .update({ likes: message.likes + 1 })
+                                .eq("id", message.id);
+                            }}
+                          >
+                            <Badge
+                              badgeContent={
+                                message.likes ? message.likes : undefined
+                              }
+                              color="primary"
+                            >
+                              <ThumbUpIcon />
+                            </Badge>
+                          </IconButton>
+                        )}
+                        {!message.isDeleted && (
+                          <IconButton
+                            onClick={async () => {
+                              await supabase
+                                .from<Message>("messages")
+                                .update({
+                                  content: "",
+                                  isDeleted: true,
+                                })
+                                .eq("id", message.id);
+                            }}
+                          >
+                            <DeleteIcon />
+                          </IconButton>
+                        )}
+                      </>
+                    }
+                  >
+                    <ListItemText>
+                      {!message.isDeleted ? (
+                        message.content
+                      ) : (
+                        <Box sx={{ fontStyle: "italic", color: "Gray" }}>
+                          (deleted)
+                        </Box>
+                      )}
+                    </ListItemText>
+                  </ListItem>
+                </Collapse>
+              ))}
+            </TransitionGroup>
+          </List>
+
+          <Box>
+            <form
+              autoComplete="off"
+              onSubmit={handleSubmit(async (data) => {
+                const newMessage: Message = {
+                  content: data.message,
+                  userId: supabase.auth.user()?.id!,
+                  isDeleted: false,
+                  likes: 0,
+                };
+                await supabase.from<Message>("messages").insert(newMessage);
+                reset();
+              })}
+            >
+              <Box>
+                <TextField
+                  label="Message"
+                  fullWidth
+                  {...register("message", { required: true, maxLength: 200 })}
+                  helperText={
+                    (errors.message?.type === "required" &&
+                      "Message is required.") ||
+                    (errors.message?.type === "maxLength" &&
+                      "Please type message with less than 200 characters.")
+                  }
+                  FormHelperTextProps={{
+                    error: !!errors.message,
+                  }}
+                  InputProps={{
+                    endAdornment: (
+                      <IconButton type="submit">
+                        <SendIcon />
+                      </IconButton>
+                    ),
+                  }}
+                />
+              </Box>
+            </form>
+          </Box>
         </Grid>
+        <Grid xs={12} md={6}></Grid>
       </Grid>
     </>
   );
 };
+
+interface MessageForm {
+  message: string;
+}
