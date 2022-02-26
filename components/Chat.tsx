@@ -166,7 +166,7 @@ export const Chat = ({ session, supabase }: Props) => {
             })}
           >
             <Box>
-              {!isLoggedIn ? (
+              {isLoggedIn ? (
                 <>
                   <Box mb={2}>
                     <TextField
