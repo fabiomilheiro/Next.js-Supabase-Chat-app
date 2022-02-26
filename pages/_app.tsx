@@ -3,9 +3,16 @@ import type { AppProps } from "next/app";
 import useSupabase from "../utils/useSupabase";
 
 function MyApp({ Component, pageProps }: AppProps) {
-  const { session, supabase } = useSupabase();
+  const { profile, session, supabase } = useSupabase();
 
-  return <Component session={session} supabase={supabase} {...pageProps} />;
+  return (
+    <Component
+      profile={profile}
+      session={session}
+      supabase={supabase}
+      {...pageProps}
+    />
+  );
 }
 
 export default MyApp;

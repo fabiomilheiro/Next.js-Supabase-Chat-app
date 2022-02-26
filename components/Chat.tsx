@@ -17,7 +17,7 @@ import {
 import { Session, SupabaseClient } from "@supabase/supabase-js";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { Message } from "../utils/types";
+import { Message, Profile } from "../utils/types";
 import SendIcon from "@mui/icons-material/Send";
 import DeleteIcon from "@mui/icons-material/Delete";
 import ThumbUpIcon from "@mui/icons-material/ThumbUp";
@@ -25,11 +25,12 @@ import { TransitionGroup } from "react-transition-group";
 import { LogInButton, LogOutButton } from "./AuthButtons";
 
 interface Props {
+  profile: Profile;
   session: Session;
   supabase: SupabaseClient;
 }
 
-export const Chat = ({ session, supabase }: Props) => {
+export const Chat = ({ profile, session, supabase }: Props) => {
   const [messages, setMessages] = useState<Message[]>([]);
   useEffect(() => {
     const fetchMessages = async () => {
@@ -87,6 +88,12 @@ export const Chat = ({ session, supabase }: Props) => {
             Chat
           </Typography>
           <Typography variant="body1">
+            Welcome,{" "}
+            {profile?.username
+              ? profile.username
+              : session?.user?.email ?? <>anonymous</>}
+            !
+            <br />
             Feel free to type messages. Others will see them immediately.👍
           </Typography>
         </Box>
