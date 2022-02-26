@@ -22,7 +22,7 @@ import SendIcon from "@mui/icons-material/Send";
 import DeleteIcon from "@mui/icons-material/Delete";
 import ThumbUpIcon from "@mui/icons-material/ThumbUp";
 import { TransitionGroup } from "react-transition-group";
-import { LogInButton, LogOutButton } from "./Auth";
+import { LogInButton, LogOutButton } from "./AuthButtons";
 
 interface Props {
   session: Session;
