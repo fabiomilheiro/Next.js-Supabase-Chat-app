@@ -13,6 +13,7 @@
     "@emotion/styled": "^11.8.1",
     "@mui/icons-material": "^5.4.2",
     "@mui/material": "^5.4.3",
+    "@supabase/supabase-js": "^1.30.6",
     "@types/react-transition-group": "^4.4.4",
     "next": "12.1.0",
     "react": "17.0.2",
