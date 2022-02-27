@@ -123,6 +123,26 @@ export const Chat = ({ profile, session, supabase }: Props) => {
     fetchProfiles();
   }, [profiles, supabase, userIds]);
   useEffect(() => {
+    if (profiles) {
+      console.log("Profiles", profiles);
+      Object.values(profiles).forEach(async (p) => {
+        console.log("Subscribing to profile updates", p);
+        await supabase
+          .from<Profile>(`profiles:id=eq.${p.id}`)
+          .on("UPDATE", (payload) => {
+            console.log("Profile updated", payload);
+            setProfiles((previous) => {
+              const newState = { ...previous };
+
+              newState[payload.new.id] = payload.new;
+
+              return newState;
+            });
+          });
+      });
+    }
+  }, [profiles, supabase]);
+  useEffect(() => {
     setIsLoggedIn(!!session);
   }, [session]);
   const {

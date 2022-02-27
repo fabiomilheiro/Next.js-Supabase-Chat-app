@@ -63,6 +63,7 @@ export const ChatMessage = ({
                 fontStyle: "italic",
                 color: theme.palette.grey[500],
                 textAlign: "right",
+                marginBottom: 1,
               }}
             >
               {message.createdAt &&
