@@ -87,10 +87,11 @@ export const ChatMessage = ({
                 {!message.isDeleted && (
                   <IconButton
                     onClick={async () => {
-                      await supabase
-                        .from<Message>("messages")
-                        .update({ likes: message.likes + 1 })
-                        .eq("id", message.id);
+                      isLoggedIn &&
+                        (await supabase
+                          .from<Message>("messages")
+                          .update({ likes: message.likes + 1 })
+                          .eq("id", message.id));
                     }}
                   >
                     <Badge
