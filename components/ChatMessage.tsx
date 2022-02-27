@@ -14,6 +14,7 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import { Message, Profile } from "../utils/types";
 import ThumbUpIcon from "@mui/icons-material/ThumbUp";
 import DeleteIcon from "@mui/icons-material/Delete";
+import UndoIcon from "@mui/icons-material/Undo";
 
 interface Props {
   message: Message;
@@ -60,13 +61,26 @@ export const ChatMessage = ({ message, profiles, supabase }: Props) => {
                   await supabase
                     .from<Message>("messages")
                     .update({
-                      content: "",
                       isDeleted: true,
                     })
                     .eq("id", message.id);
                 }}
               >
                 <DeleteIcon />
+              </IconButton>
+            )}
+            {message.isDeleted && (
+              <IconButton
+                onClick={async () => {
+                  await supabase
+                    .from<Message>("messages")
+                    .update({
+                      isDeleted: false,
+                    })
+                    .eq("id", message.id);
+                }}
+              >
+                <UndoIcon />
               </IconButton>
             )}
           </>

@@ -51,7 +51,8 @@ export const Chat = ({ profile, session, supabase }: Props) => {
       const { data, error } = await supabase
         .from<Message>("messages")
         .select("*")
-        .order("id");
+        .order("id")
+        .filter("isDeleted", "eq", false);
 
       if (error) {
         console.error(error);
