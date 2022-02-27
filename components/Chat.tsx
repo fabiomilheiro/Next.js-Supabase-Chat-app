@@ -24,6 +24,7 @@ import ThumbUpIcon from "@mui/icons-material/ThumbUp";
 import { TransitionGroup } from "react-transition-group";
 import { LogInButton, LogOutButton } from "./AuthButtons";
 import { UserSettings } from "./UserSettings";
+import { ChatMessage } from "./ChatMessage";
 
 interface Props {
   profile: Profile;
@@ -35,7 +36,16 @@ export const Chat = ({ profile, session, supabase }: Props) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [username, setUsername] = useState("");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [profiles, setProfiles] = useState<{ [id: string]: Profile }>({});
+  const userIds = messages
+    .map((m) => m.userId)
+    .reduce<string[]>((acc, userId) => {
+      if (!acc.some((id) => id === userId)) {
+        acc = [...acc, userId];
+      }
 
+      return acc;
+    }, []);
   useEffect(() => {
     const fetchMessages = async () => {
       const { data, error } = await supabase
@@ -82,6 +92,36 @@ export const Chat = ({ profile, session, supabase }: Props) => {
     setUsername(username);
   }, [profile, session]);
   useEffect(() => {
+    const fetchProfiles = async () => {
+      const userIdsToFetch = userIds.filter((id) => !profiles[id]);
+
+      if (!userIdsToFetch.length) {
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from<Profile>("profiles")
+        .select("*")
+        .in("id", userIdsToFetch);
+
+      if (error) {
+        console.error(error);
+      } else if (data && data[0]) {
+        setProfiles((previous) => {
+          const newState = { ...previous };
+
+          data.forEach((p) => {
+            newState[p.id] = p;
+          });
+
+          return newState;
+        });
+      }
+    };
+
+    fetchProfiles();
+  }, [profiles, supabase, userIds]);
+  useEffect(() => {
     setIsLoggedIn(!!session);
   }, [session]);
   const {
@@ -108,60 +148,12 @@ export const Chat = ({ profile, session, supabase }: Props) => {
         <List sx={{ overflow: "auto" }}>
           <TransitionGroup>
             {messages.map((message) => (
-              <Collapse key={message.id} in={true}>
-                <ListItem
-                  sx={{ paddingLeft: 0 }}
-                  alignItems="flex-start"
-                  secondaryAction={
-                    <>
-                      {!message.isDeleted && (
-                        <IconButton
-                          onClick={async () => {
-                            await supabase
-                              .from<Message>("messages")
-                              .update({ likes: message.likes + 1 })
-                              .eq("id", message.id);
-                          }}
-                        >
-                          <Badge
-                            badgeContent={
-                              message.likes ? message.likes : undefined
-                            }
-                            color="primary"
-                          >
-                            <ThumbUpIcon />
-                          </Badge>
-                        </IconButton>
-                      )}
-                      {!message.isDeleted && (
-                        <IconButton
-                          onClick={async () => {
-                            await supabase
-                              .from<Message>("messages")
-                              .update({
-                                content: "",
-                                isDeleted: true,
-                              })
-                              .eq("id", message.id);
-                          }}
-                        >
-                          <DeleteIcon />
-                        </IconButton>
-                      )}
-                    </>
-                  }
-                >
-                  <ListItemText>
-                    {!message.isDeleted ? (
-                      message.content
-                    ) : (
-                      <Box sx={{ fontStyle: "italic", color: "Gray" }}>
-                        (deleted)
-                      </Box>
-                    )}
-                  </ListItemText>
-                </ListItem>
-              </Collapse>
+              <ChatMessage
+                key={message.id}
+                message={message}
+                profiles={profiles}
+                supabase={supabase}
+              />
             ))}
           </TransitionGroup>
         </List>

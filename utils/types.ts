@@ -2,6 +2,7 @@ export interface Profile {
   id: string;
   createdAt: string;
   username: string;
+  avatar: string;
 }
 
 export interface Message {
