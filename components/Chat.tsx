@@ -154,6 +154,7 @@ export const Chat = ({ profile, session, supabase }: Props) => {
                 message={message}
                 profiles={profiles}
                 supabase={supabase}
+                isLoggedIn={isLoggedIn}
               />
             ))}
           </TransitionGroup>
