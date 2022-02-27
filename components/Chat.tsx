@@ -55,7 +55,7 @@ export const Chat = ({ profile, session, supabase }: Props) => {
         .filter("isDeleted", "eq", false);
 
       if (error) {
-        console.error(error);
+        console.error("Could not fetch messages.", error);
       }
       setMessages(data || []);
     };
@@ -106,7 +106,7 @@ export const Chat = ({ profile, session, supabase }: Props) => {
         .in("id", userIdsToFetch);
 
       if (error) {
-        console.error(error);
+        console.error("Could not fetch profiles.", error);
       } else if (data && data[0]) {
         setProfiles((previous) => {
           const newState = { ...previous };
@@ -124,13 +124,10 @@ export const Chat = ({ profile, session, supabase }: Props) => {
   }, [profiles, supabase, userIds]);
   useEffect(() => {
     if (profiles) {
-      console.log("Profiles", profiles);
       Object.values(profiles).forEach(async (p) => {
-        console.log("Subscribing to profile updates", p);
         await supabase
           .from<Profile>(`profiles:id=eq.${p.id}`)
           .on("UPDATE", (payload) => {
-            console.log("Profile updated", payload);
             setProfiles((previous) => {
               const newState = { ...previous };
 
